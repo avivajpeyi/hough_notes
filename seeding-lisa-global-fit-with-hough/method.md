@@ -21,6 +21,20 @@ soft weighting was the single largest sensitivity gain, **−0.007 to −0.010 i
 transform choice contributed nothing. The gain comes from keeping the amplitude information a
 0/1 vote discards.
 
+**The comparison is not yet representation-neutral, and this matters.** A whitened real WDM
+coefficient has one real degree of freedom; a complex STFT bin has two. So the same function of
+raw power does *not* give WDM and STFT pixels the same statistical meaning, and the hard-vs-soft
+factorial above inherits that asymmetry. The fair statistic uses the null appropriate to each
+representation,
+
+```
+u_p = −log P₀(R ≥ R_p),        H_soft(θ) = Σ_p a_p · g(u_p)
+```
+
+with `P₀` an analytic or empirical *local* null CDF and `g` a robust clipping function. Our
+current `ρ − dof` is a crude approximation to this; redoing the factorial with `u_p` is cheap and
+is the highest-value outstanding methodological fix.
+
 The weight is bounded: `w = min(ρ − dof, clip)`. Clipping is **regime-dependent, not a
 default**, and the crossover is measurable (recovery within one bin, fixed signal):
 
@@ -43,6 +57,11 @@ construction*. An STFT at 75% overlap shares three quarters of each segment with
 so the effective independent count is ~¼ of the pixel count — and by a template-dependent
 amount, which makes scores incomparable across a family.
 
+**One tiling will not serve every source class.** A year-long near-monochromatic GB, a slowly
+evolving EMRI harmonic and an MBHB that goes nearly vertical before merger have incompatible
+optimal tilings. Think in terms of a small bank — `{fine-f, balanced, fine-t}` — clustering
+candidates across representations, with the final likelihood on one chosen native tiling.
+
 Grid sizing follows the same drift criterion as `TFFT ≈ 1/√ḟ_max`:
 `nt = 2·duration·√ḟ_max`, rounded to a power of two. Inheriting `nt` from elsewhere cost a
 factor of 4 in resolution in an early study, which alone explained an apparent deficit against
@@ -57,6 +76,12 @@ No optimizer, no warm start, ~40 lines.
 Contamination from signals is **one-sided** — sources only add power — so the median is not
 special; a lower quantile is strictly more robust, and `q ≈ 0.4` cancels the contamination bias
 at ~6% tile occupancy for ~20% more scatter.
+
+This addresses a named failure mode: **the signal whitening itself away**. A strong track
+inflates `Ŝ(t,f)`, which suppresses the track's own significance — the estimator and the search
+are coupled. The three admissible fixes are a mask around provisional loud tracks, robust
+quantile estimation, or cross-fitting where the pixels estimating the background are disjoint
+from those scored. We use the second; the first is implemented but not validated end to end.
 
 The property that matters: a smooth spline **absorbs signal without bound** (in-track log-PSD
 bias grows to +1.35), while a block quantile **saturates** (+0.14, independent of amplitude)

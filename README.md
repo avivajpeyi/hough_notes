@@ -34,17 +34,30 @@ a ridge, so a point estimate is misleading as an initialisation. See
 
 ## Scope
 
-| class | track family | status |
+| class | role | status |
 |---|---|---|
-| MBHB | `(Mc, tc)` Newtonian chirp | working |
-| EMRI | SVD basis or slow chirp | not attempted |
-| Stellar-origin BH | Doppler + slow chirp | not attempted |
-| Galactic binaries | Doppler-modulated monochromatic | out of scope |
+| MBHB | fastest validation problem; strongest prior art | working |
+| GB | **the test of whether this helps the global-fit bottleneck** | deferred, not dropped |
+| EMRI | scientifically exciting; recent work makes single-harmonic search hard to claim | not attempted |
+| Stellar-origin BH | same annual Doppler structure as GB | not attempted |
 
-GBs are excluded by **density** — ~10⁴ resolvable sources, a blind search needs the sky as two
-extra dimensions, and the global fit already handles them iteratively. Note that stellar-origin
-BHs carry the *same* annual Doppler structure, so the split is not "GBs need Doppler and nothing
-else does".
+**On deferring GBs.** A full `(f, ḟ, λ, β)` Hough is the wrong first move — the sky adds two
+expensive dimensions and ~10⁴ sources. But GBs should not be dropped, because they are the case
+that decides whether a candidate layer actually relieves the global fit. The staged version is
+cheap:
+
+```
+WDM morphology → (f̂, ḟ̂) → F-statistic / FastGB refinement → q(θ_GB)
+```
+
+The WDM step only has to shrink the prior volume; the F-statistic decides which apparent tracks
+are consistent with real LISA response modulation. The question to answer is *"can a WDM
+candidate finder produce proposals as useful as a dedicated single-source residual PTMCMC, at
+substantially lower wall time?"*
+
+Expect the overlap graph to develop a giant connected component in the confusion-dominated
+low-frequency regime. When it does, leave sub-threshold GBs in the stochastic component rather
+than pretending sparsity holds.
 
 ## Where this sits
 
@@ -60,6 +73,17 @@ neither approach is available. **A robust in-situ `S(t,f)` is the gap**, and the
 work that is genuinely new. Our MBHB search is behind Nobili's on the same data; the search is
 the demonstrator, not the claim, and the
 [ablation](seeding-lisa-global-fit-with-hough/results.md#psd-ablation) is designed around that.
+
+## Novelty boundary
+
+"Soft Hough for LISA" is **not** a sufficient claim on its own. Continuous pixel accumulation is
+old GW territory: StackSlide sums normalised SFT power, PowerFlux uses noise- and
+antenna-weighted power, and weighted Hough already carries noise/sensitivity weights. Replacing
+0/1 votes with continuous ones is a good engineering result, not a new method.
+
+The defensible framing is narrower: **a locally noise-calibrated continuous track statistic in
+an orthogonal WDM representation, built to generate proposals for nonstationary LISA global
+inference** — and judged by whether those proposals save downstream computation.
 
 ## Is it still a Hough transform?
 
